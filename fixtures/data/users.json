@@ -1,0 +1,37 @@
+{
+  "users": {
+
+    "standard": {
+        "username": "STANDARD_USERNAME",
+        "password": "STANDARD_PASSWORD"
+      },
+    "problem": {
+        "username": "PROBLEM_USERNAME",
+        "password": "PROBLEM_PASSWORD"
+      },
+    "performance": {
+        "username": "PERFORMANCE_USERNAME",
+        "password": "PERFORMANCE_PASSWORD"
+      },
+    "error": {
+        "username": "ERROR_USERNAME",
+        "password": "ERROR_PASSWORD"
+      },
+    "visual": {
+        "username": "VISUAL_USERNAME",
+        "password": "VISUAL_PASSWORD"
+      },
+    "locked": {
+        "username": "LOCKED_USERNAME",
+        "password": "LOCKED_PASSWORD"
+      },
+    "invalid": {
+        "username": "INVALID_USERNAME",
+        "password": "INVALID_PASSWORD"
+      },
+    "empty": {
+        "username": "EMPTY_USERNAME",
+        "password": "EMPTY_PASSWORD"
+      }
+  }
+}

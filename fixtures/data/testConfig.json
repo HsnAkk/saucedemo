@@ -1,0 +1,12 @@
+{
+  "timeouts": {
+    "short": 5000,
+    "medium": 10000,
+    "long": 30000
+  },
+  "viewport": {
+    "desktop": { "width": 1920, "height": 1080 },
+    "tablet": { "width": 768, "height": 1024 },
+    "mobile": { "width": 375, "height": 667 }
+  }
+}

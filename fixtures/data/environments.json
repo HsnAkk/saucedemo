@@ -1,0 +1,17 @@
+{
+  "environments": {
+    "staging": {
+      "baseUrl": "https://www.saucedemo.com/",
+      "apiUrl": "https://www.saucedemo.com/",
+      "description": "SauceDemo staging environment",
+      "use": {
+        "headless": false
+      }
+    },
+    "production": {
+      "baseUrl": "https://www.saucedemo.com/",
+      "apiUrl": "https://www.saucedemo.com/",
+      "description": "SauceDemo production environment"
+    }
+  }
+}

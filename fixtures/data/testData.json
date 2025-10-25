@@ -1,0 +1,49 @@
+{
+  "testData": {
+    "checkout": {
+      "validCheckout": {
+        "firstName": "John",
+        "lastName": "Doe",
+        "postalCode": "12345"
+      },
+      "invalidCheckout": {
+        "firstName": "",
+        "lastName": "",
+        "postalCode": ""
+      },
+      "specialCharacters": {
+        "firstName": "José",
+        "lastName": "O'Connor-Smith",
+        "postalCode": "A1B-2C3"
+      }
+    },
+    "filters": {
+      "lohi": "Price (low to high)",
+      "hilo": "Price (high to low)",
+      "az": "Name (A to Z)",
+      "za": "Name (Z to A)"
+    },
+    "validation": {
+      "loginErrorMessages": {
+        "locked": "Epic sadface: Sorry, this user has been locked out.",
+        "invalid": "Epic sadface: Username and password do not match any user in this service",
+        "emptyUsername": "Epic sadface: Username is required",
+        "emptyPassword": "Epic sadface: Password is required",
+        "emptyFields": "Epic sadface: Username is required",
+        "wrongUsername": "Epic sadface: Username and password do not match any user in this service",
+        "wrongPassword": "Epic sadface: Username and password do not match any user in this service"
+      },
+      "pageTitles": {
+        "login": "Swag Labs",
+        "inventory": "Swag Labs",
+        "cart": "Swag Labs",
+        "checkout": "Swag Labs"
+      },
+      "successMessages": {
+        "loginSuccess": "Successfully logged in",
+        "addToCart": "Product added to cart",
+        "checkoutComplete": "Thank you for your order!"
+      }
+    }
+  }
+}
