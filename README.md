@@ -65,23 +65,7 @@ npm install
 cp .env.example .env
 ```
 
-4. Configure environment variables in `.env`:
-
-```env
-STANDARD_USERNAME=standard_user
-STANDARD_PASSWORD=secret_sauce
-PROBLEM_USERNAME=problem_user
-PROBLEM_PASSWORD=secret_sauce
-LOCKED_USERNAME=locked_out_user
-LOCKED_PASSWORD=secret_sauce
-INVALID_USERNAME=invalid_user
-INVALID_PASSWORD=invalid_password
-EMPTY_USERNAME=
-EMPTY_PASSWORD=
-TEST_ENV=staging
-```
-
-5. Set up Git hooks:
+4. Set up Git hooks:
 
 ```bash
 npm run prepare
