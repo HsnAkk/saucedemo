@@ -15,17 +15,8 @@ test.describe('Login Smoke Tests', () => {
   test.beforeEach(async ({ page }) => {
     po = new POManager(page);
     // Navigate to inventory page (we're already authenticated)
-    await page.goto('/inventory.html');
-    await page.waitForLoadState('networkidle');
-
-    // If we're redirected to login page, it means auth state wasn't loaded properly
-    const currentUrl = page.url();
-    if (currentUrl.includes('/') && !currentUrl.includes('/inventory')) {
-      console.warn('Authentication state not loaded properly, redirecting to login page');
-      // Take a screenshot for debugging
-      await page.screenshot({ path: 'screenshots/auth-state-error.png' });
-      throw new Error('Authentication state not properly loaded. Current URL: ' + currentUrl);
-    }
+    await po.inventoryPage.goto();
+    await po.inventoryPage.waitForPageLoad();
   });
 
   // ==================== CRITICAL PATH TESTS ====================
@@ -38,13 +29,24 @@ test.describe('Login Smoke Tests', () => {
     const pageTitle = await po.page.title();
     expect(pageTitle).toBe(TestDataLoader.getPageTitle('inventory'));
 
-    // Verify we can see inventory items (critical functionality)
-    const inventoryContainer = po.page.locator('.inventory_container');
-    await expect(inventoryContainer).toBeVisible();
+    // Verify inventory page is properly loaded
+    await po.inventoryPage.assertInventoryPageLoaded();
 
     // Verify inventory items are loaded
-    const inventoryItems = po.page.locator('.inventory_item');
-    await expect(inventoryItems).toHaveCount(6); // SauceDemo has 6 products
+    await po.inventoryPage.assertAllProductsDisplayed(6);
+  });
+
+  test('@smoke @login @critical - Should display all required UI elements', async () => {
+    // Verify header elements
+    await expect(po.inventoryPage.headerTitle).toBeVisible();
+    await expect(po.inventoryPage.menuButton).toBeVisible();
+    await expect(po.inventoryPage.cartIcon).toBeVisible();
+
+    // Verify sorting dropdown is visible
+    await expect(po.inventoryPage.sortDropdown).toBeVisible();
+
+    // Verify inventory container is visible
+    await expect(po.inventoryPage.inventoryContainer).toBeVisible();
   });
 
   test('@smoke @login @critical - Should maintain authentication across page navigation', async () => {
@@ -52,15 +54,17 @@ test.describe('Login Smoke Tests', () => {
     await expect(po.page).toHaveURL(/.*inventory/);
 
     // Navigate to cart page
-    await po.page.goto('/cart.html');
-    await po.page.waitForLoadState('networkidle');
+    await po.cartPage.goto();
+    await po.cartPage.waitForPageLoad();
 
     // Verify we're still authenticated (not redirected to login)
     await expect(po.page).toHaveURL(/.*cart/);
+    await po.cartPage.assertCartPageLoaded();
 
     // Go back to inventory
-    await po.page.goto('/inventory.html');
+    await po.inventoryPage.goto();
     await expect(po.page).toHaveURL(/.*inventory/);
+    await po.inventoryPage.assertInventoryPageLoaded();
   });
 
   test('@smoke @login @critical - Should handle page refresh while authenticated', async () => {
@@ -69,25 +73,24 @@ test.describe('Login Smoke Tests', () => {
 
     // Refresh the page
     await po.page.reload();
-    await po.page.waitForLoadState('networkidle');
+    await po.inventoryPage.waitForPageLoad();
 
     // Verify we're still authenticated (not redirected to login)
     await expect(po.page).toHaveURL(/.*inventory/);
 
-    // Verify inventory container is still visible
-    const inventoryContainer = po.page.locator('.inventory_container');
-    await expect(inventoryContainer).toBeVisible();
+    // Verify inventory page is still visible
+    await po.inventoryPage.assertInventoryPageLoaded();
   });
 
   test('@smoke @login @critical - Should have proper user session information', async () => {
     // Verify we're authenticated by checking for user-specific elements
     await expect(po.page).toHaveURL(/.*inventory/);
 
-    // Verify header menu is visible (indicates authenticated state)
-    const headerMenu = po.page.locator('.bm-menu');
-    // Note: Header menu might be hidden by default, so we check for menu button
-    const menuButton = po.page.locator('#react-burger-menu-btn');
-    await expect(menuButton).toBeVisible();
+    // Verify header menu button is visible (indicates authenticated state)
+    await expect(po.inventoryPage.menuButton).toBeVisible();
+
+    // Verify cart icon is visible
+    await expect(po.inventoryPage.cartIcon).toBeVisible();
   });
 
   // ==================== PERFORMANCE SMOKE TESTS ====================
@@ -96,8 +99,8 @@ test.describe('Login Smoke Tests', () => {
     const startTime = Date.now();
 
     // Navigate to inventory page
-    await po.page.goto('/inventory.html');
-    await po.page.waitForLoadState('networkidle');
+    await po.inventoryPage.goto();
+    await po.inventoryPage.waitForPageLoad();
 
     const endTime = Date.now();
     const loadTime = endTime - startTime;
@@ -106,16 +109,15 @@ test.describe('Login Smoke Tests', () => {
     expect(loadTime).toBeLessThan(3000);
 
     // Verify all elements are visible
-    const inventoryContainer = po.page.locator('.inventory_container');
-    await expect(inventoryContainer).toBeVisible();
+    await po.inventoryPage.assertInventoryPageLoaded();
   });
 
   test('@smoke @login @performance - Should navigate between pages quickly', async () => {
     const startTime = Date.now();
 
     // Navigate to cart page
-    await po.page.goto('/cart.html');
-    await po.page.waitForLoadState('networkidle');
+    await po.cartPage.goto();
+    await po.cartPage.waitForPageLoad();
 
     const endTime = Date.now();
     const navigationTime = endTime - startTime;
@@ -125,6 +127,7 @@ test.describe('Login Smoke Tests', () => {
 
     // Verify we're on cart page
     await expect(po.page).toHaveURL(/.*cart/);
+    await po.cartPage.assertCartPageLoaded();
   });
 
   // ==================== NAVIGATION SMOKE TESTS ====================
@@ -134,18 +137,17 @@ test.describe('Login Smoke Tests', () => {
     await expect(po.page).toHaveURL(/.*inventory/);
 
     // Navigate to cart page
-    await po.page.goto('/cart.html');
-    await po.page.waitForLoadState('networkidle');
+    await po.cartPage.goto();
     await expect(po.page).toHaveURL(/.*cart/);
 
     // Navigate to checkout info page
-    await po.page.goto('/checkout-step-one.html');
-    await po.page.waitForLoadState('networkidle');
+    await po.checkoutInfoPage.goto();
     await expect(po.page).toHaveURL(/.*checkout-step-one/);
 
     // Go back to inventory
-    await po.page.goto('/inventory.html');
+    await po.inventoryPage.goto();
     await expect(po.page).toHaveURL(/.*inventory/);
+    await po.inventoryPage.assertInventoryPageLoaded();
   });
 
   // ==================== ACCESSIBILITY SMOKE TESTS ====================
@@ -155,15 +157,12 @@ test.describe('Login Smoke Tests', () => {
     await expect(po.page).toHaveURL(/.*inventory/);
 
     // Verify main content is visible
-    const inventoryContainer = po.page.locator('.inventory_container');
-    await expect(inventoryContainer).toBeVisible();
+    await expect(po.inventoryPage.inventoryContainer).toBeVisible();
 
     // Verify header elements are accessible
-    const menuButton = po.page.locator('#react-burger-menu-btn');
-    await expect(menuButton).toBeVisible();
-
-    const cartIcon = po.page.locator('.shopping_cart_link');
-    await expect(cartIcon).toBeVisible();
+    await expect(po.inventoryPage.menuButton).toBeVisible();
+    await expect(po.inventoryPage.cartIcon).toBeVisible();
+    await expect(po.inventoryPage.headerTitle).toBeVisible();
   });
 
   // ==================== CROSS-BROWSER SMOKE TESTS ====================
@@ -173,17 +172,46 @@ test.describe('Login Smoke Tests', () => {
     await po.page.setViewportSize({ width: 375, height: 667 });
 
     // Verify inventory page still works on mobile
-    const inventoryContainer = po.page.locator('.inventory_container');
-    await expect(inventoryContainer).toBeVisible();
+    await expect(po.inventoryPage.inventoryContainer).toBeVisible();
 
     // Verify mobile navigation works
-    const menuButton = po.page.locator('#react-burger-menu-btn');
-    await expect(menuButton).toBeVisible();
+    await expect(po.inventoryPage.menuButton).toBeVisible();
 
     // Reset to desktop viewport
     await po.page.setViewportSize({ width: 1280, height: 720 });
 
     // Verify desktop layout still works
-    await expect(inventoryContainer).toBeVisible();
+    await expect(po.inventoryPage.inventoryContainer).toBeVisible();
+    await po.inventoryPage.assertInventoryPageLoaded();
+  });
+
+  // ==================== ADDITIONAL SMOKE TESTS ====================
+
+  test('@smoke @login @cart - Should have empty cart after authentication', async () => {
+    // Verify cart badge is not visible (empty cart)
+    await expect(po.inventoryPage.cartBadge).not.toBeVisible();
+  });
+
+  test('@smoke @login @menu - Should open and close header menu', async () => {
+    // Open menu
+    await po.inventoryPage.openMenu();
+    await expect(po.inventoryPage.menuItems).toBeVisible();
+
+    // Close menu
+    await po.inventoryPage.closeMenu();
+    await expect(po.inventoryPage.menuItems).not.toBeVisible();
+  });
+
+  test('@smoke @login @logout - Should logout successfully', async () => {
+    // Logout from application
+    await po.inventoryPage.logout();
+
+    // Verify we're redirected to login page
+    await expect(po.page).toHaveURL(/.*\/$/);
+
+    // Verify login page elements are visible
+    await expect(po.loginPage.usernameInput).toBeVisible();
+    await expect(po.loginPage.passwordInput).toBeVisible();
+    await expect(po.loginPage.loginButton).toBeVisible();
   });
 });

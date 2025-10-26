@@ -6,6 +6,7 @@ import { TestDataLoader } from '../../utils/testDataLoader.js';
  * Cart & Checkout Smoke Tests
  * Critical path tests for shopping cart and checkout functionality
  * These tests run with pre-authenticated state from global-setup.js
+ * Organized by user journey: Cart → Product Details → Checkout
  */
 test.describe('Cart & Checkout Smoke Tests', () => {
   let po;
@@ -16,293 +17,538 @@ test.describe('Cart & Checkout Smoke Tests', () => {
   test.beforeEach(async ({ page }) => {
     po = new POManager(page);
     // Navigate to inventory page (we're already authenticated)
-    await page.goto('/inventory.html');
-    await page.waitForLoadState('networkidle');
+    await po.inventoryPage.goto();
+    await po.inventoryPage.waitForPageLoad();
   });
 
-  // ==================== CART SMOKE TESTS ====================
+  // ==================== CART OPERATIONS ====================
 
-  test('@smoke @cart @critical - Should add product to cart successfully', async () => {
-    // Add first product to cart
-    const addToCartButton = po.page
-      .locator('[data-test="add-to-cart-sauce-labs-backpack"]')
-      .first();
-    await addToCartButton.click();
+  test.describe('Cart Operations', () => {
+    test('@smoke @cart @critical - Should add product to cart successfully', async () => {
+      await po.inventoryPage.addProductToCart('Sauce Labs Backpack');
+      await po.inventoryPage.assertProductAddedToCart('Sauce Labs Backpack');
+      await po.inventoryPage.assertCartBadgeCount(1);
+    });
 
-    // Verify button changes to "Remove"
-    await expect(addToCartButton).toHaveText('Remove');
+    test('@smoke @cart @critical - Should remove product from cart', async () => {
+      await po.inventoryPage.addProductToCart('Sauce Labs Backpack');
+      await po.inventoryPage.goToCart();
+      await po.cartPage.waitForPageLoad();
 
-    // Verify cart badge shows 1 item
-    const cartBadge = po.page.locator('.shopping_cart_badge');
-    await expect(cartBadge).toHaveText('1');
+      await po.cartPage.removeProductFromCart('Sauce Labs Backpack');
+      await po.cartPage.assertCartIsEmpty();
+      await expect(po.inventoryPage.cartBadge).not.toBeVisible();
+    });
+
+    test('@smoke @cart @critical - Should add multiple products to cart', async () => {
+      await po.inventoryPage.addMultipleProductsToCart([
+        'Sauce Labs Backpack',
+        'Sauce Labs Bike Light',
+        'Sauce Labs Bolt T-Shirt',
+      ]);
+      await po.inventoryPage.assertCartBadgeCount(3);
+    });
+
+    test('@smoke @cart @critical - Should display product information in cart', async () => {
+      await po.inventoryPage.addProductToCart('Sauce Labs Backpack');
+      await po.inventoryPage.goToCart();
+      await po.cartPage.waitForPageLoad();
+
+      await po.cartPage.assertProductInCart('Sauce Labs Backpack');
+      await po.cartPage.assertProductPrice('Sauce Labs Backpack', '$29.99');
+      await po.cartPage.assertProductQuantity('Sauce Labs Backpack', '1');
+    });
+
+    test('@smoke @cart @critical - Should navigate to cart page', async () => {
+      await po.inventoryPage.addProductToCart('Sauce Labs Backpack');
+      await po.inventoryPage.goToCart();
+
+      await expect(po.page).toHaveURL(/.*cart/);
+      const pageTitle = await po.page.title();
+      expect(pageTitle).toBe(TestDataLoader.getPageTitle('cart'));
+      await po.cartPage.assertCartPageLoaded();
+      await po.cartPage.assertCartItemCount(1);
+    });
+
+    test('@smoke @cart @navigation - Should maintain cart state across page navigation', async () => {
+      await po.inventoryPage.addMultipleProductsToCart([
+        'Sauce Labs Backpack',
+        'Sauce Labs Bike Light',
+      ]);
+
+      await po.inventoryPage.assertCartBadgeCount(2);
+      await po.inventoryPage.goToCart();
+      await po.cartPage.assertCartItemCount(2);
+      await po.cartPage.continueShopping();
+      await po.inventoryPage.assertCartBadgeCount(2);
+    });
   });
 
-  test('@smoke @cart @critical - Should navigate to cart page', async () => {
-    // Add a product to cart first
-    const addToCartButton = po.page
-      .locator('[data-test="add-to-cart-sauce-labs-backpack"]')
-      .first();
-    await addToCartButton.click();
+  // ==================== PRODUCT DETAILS ====================
 
-    // Navigate to cart page
-    const cartIcon = po.page.locator('.shopping_cart_link');
-    await cartIcon.click();
+  test.describe('Product Details', () => {
+    test('@smoke @product @critical - Should navigate to product details page', async () => {
+      const productName = 'Sauce Labs Backpack';
+      const productItem = po.inventoryPage.getProductItemByName(productName);
+      const productNameLink = productItem.locator('.inventory_item_name');
+      await productNameLink.click();
 
-    // Verify we're on cart page
-    await expect(po.page).toHaveURL(/.*cart/);
+      await expect(po.page).toHaveURL(/.*inventory-item/);
+      await po.productDetailsPage.waitForPageLoad();
+      await po.productDetailsPage.assertPageLoaded();
+    });
 
-    // Verify cart page title
-    const pageTitle = await po.page.title();
-    expect(pageTitle).toBe(TestDataLoader.getPageTitle('cart'));
+    test('@smoke @product @critical - Should display product information correctly', async () => {
+      const productName = 'Sauce Labs Backpack';
+      const productItem = po.inventoryPage.getProductItemByName(productName);
+      const productNameLink = productItem.locator('.inventory_item_name');
+      await productNameLink.click();
+      await po.productDetailsPage.waitForPageLoad();
 
-    // Verify cart items are visible
-    const cartItems = po.page.locator('.cart_item');
-    await expect(cartItems).toHaveCount(1);
+      await po.productDetailsPage.assertAllProductDetailsDisplayed();
+      await po.productDetailsPage.assertProductName(productName);
+      await po.productDetailsPage.assertProductPrice('$29.99');
+      await po.productDetailsPage.assertProductDescriptionExists();
+      await po.productDetailsPage.assertProductImageVisible();
+    });
+
+    test('@smoke @product @critical - Should add product to cart from details page', async () => {
+      const productName = 'Sauce Labs Backpack';
+      const productItem = po.inventoryPage.getProductItemByName(productName);
+      const productNameLink = productItem.locator('.inventory_item_name');
+      await productNameLink.click();
+      await po.productDetailsPage.waitForPageLoad();
+
+      await po.productDetailsPage.addToCart();
+      await po.productDetailsPage.assertProductAddedToCart();
+      await po.productDetailsPage.assertCartBadgeCount(1);
+    });
+
+    test('@smoke @product @critical - Should remove product from cart from details page', async () => {
+      await po.inventoryPage.addProductToCart('Sauce Labs Backpack');
+
+      const productItem = po.inventoryPage.getProductItemByName('Sauce Labs Backpack');
+      const productNameLink = productItem.locator('.inventory_item_name');
+      await productNameLink.click();
+      await po.productDetailsPage.waitForPageLoad();
+
+      await po.productDetailsPage.assertProductAddedToCart();
+      await po.productDetailsPage.removeFromCart();
+      await po.productDetailsPage.assertProductRemovedFromCart();
+      await po.productDetailsPage.assertCartBadgeCount(0);
+    });
+
+    test('@smoke @product @navigation - Should navigate back to inventory from details page', async () => {
+      const productName = 'Sauce Labs Backpack';
+      const productItem = po.inventoryPage.getProductItemByName(productName);
+      const productNameLink = productItem.locator('.inventory_item_name');
+      await productNameLink.click();
+      await po.productDetailsPage.waitForPageLoad();
+
+      await expect(po.page).toHaveURL(/.*inventory-item/);
+      await po.productDetailsPage.goBackToInventory();
+      await expect(po.page).toHaveURL(/.*inventory/);
+      await po.inventoryPage.assertInventoryPageLoaded();
+    });
+
+    test('@smoke @product @critical - Should match product details with inventory', async () => {
+      const productName = 'Sauce Labs Backpack';
+
+      const inventoryPrice = await po.inventoryPage.getProductPrice(productName);
+      const inventoryDescription = await po.inventoryPage.getProductDescription(productName);
+
+      const productItem = po.inventoryPage.getProductItemByName(productName);
+      const productNameLink = productItem.locator('.inventory_item_name');
+      await productNameLink.click();
+      await po.productDetailsPage.waitForPageLoad();
+
+      const detailsPrice = await po.productDetailsPage.getProductPrice();
+      const detailsDescription = await po.productDetailsPage.getProductDescription();
+
+      expect(detailsPrice).toBe(inventoryPrice);
+      expect(detailsDescription).toBe(inventoryDescription);
+    });
+
+    test('@smoke @product @critical - Should handle adding/removing multiple times from details', async () => {
+      const productName = 'Sauce Labs Backpack';
+      const productItem = po.inventoryPage.getProductItemByName(productName);
+      const productNameLink = productItem.locator('.inventory_item_name');
+      await productNameLink.click();
+      await po.productDetailsPage.waitForPageLoad();
+
+      await po.productDetailsPage.addToCart();
+      await po.productDetailsPage.assertCartBadgeCount(1);
+      await po.productDetailsPage.removeFromCart();
+      await po.productDetailsPage.assertCartBadgeCount(0);
+      await po.productDetailsPage.addToCart();
+      await po.productDetailsPage.assertCartBadgeCount(1);
+    });
   });
 
-  test('@smoke @cart @critical - Should remove product from cart', async () => {
-    // Add a product to cart
-    const addToCartButton = po.page
-      .locator('[data-test="add-to-cart-sauce-labs-backpack"]')
-      .first();
-    await addToCartButton.click();
+  // ==================== CHECKOUT FLOW ====================
 
-    // Navigate to cart page
-    const cartIcon = po.page.locator('.shopping_cart_link');
-    await cartIcon.click();
+  test.describe('Checkout Flow', () => {
+    test('@smoke @checkout @critical - Should navigate to checkout information page', async () => {
+      await po.inventoryPage.addProductToCart('Sauce Labs Backpack');
+      await po.cartPage.goto();
+      await po.cartPage.waitForPageLoad();
+      await po.cartPage.goToCheckout();
 
-    // Remove product from cart
-    const removeButton = po.page.locator('[data-test="remove-sauce-labs-backpack"]');
-    await removeButton.click();
+      await expect(po.page).toHaveURL(/.*checkout-step-one/);
+      await po.checkoutInfoPage.assertPageLoaded();
+    });
 
-    // Verify cart is empty
-    const cartItems = po.page.locator('.cart_item');
-    await expect(cartItems).toHaveCount(0);
+    test('@smoke @checkout @critical - Should fill checkout form and continue', async () => {
+      await po.inventoryPage.addProductToCart('Sauce Labs Backpack');
+      await po.cartPage.goto();
+      await po.cartPage.goToCheckout();
 
-    // Verify cart badge is not visible
-    const cartBadge = po.page.locator('.shopping_cart_badge');
-    await expect(cartBadge).not.toBeVisible();
+      const testData = TestDataLoader.loadTestData().testData.checkout.validCheckout;
+      await po.checkoutInfoPage.fillCheckoutForm(
+        testData.firstName,
+        testData.lastName,
+        testData.postalCode
+      );
+
+      await po.checkoutInfoPage.continueToOverview();
+      await expect(po.page).toHaveURL(/.*checkout-step-two/);
+      await po.checkoutOverviewPage.assertPageLoaded();
+    });
+
+    test('@smoke @checkout @critical - Should complete checkout process', async () => {
+      await po.inventoryPage.addProductToCart('Sauce Labs Backpack');
+      await po.cartPage.goto();
+      await po.cartPage.goToCheckout();
+
+      const testData = TestDataLoader.loadTestData().testData.checkout.validCheckout;
+      await po.checkoutInfoPage.fillCheckoutForm(
+        testData.firstName,
+        testData.lastName,
+        testData.postalCode
+      );
+      await po.checkoutInfoPage.continueToOverview();
+      await po.checkoutOverviewPage.assertPageLoaded();
+
+      await po.checkoutOverviewPage.finish();
+
+      await expect(po.page).toHaveURL(/.*checkout-complete/);
+      await po.checkoutCompletePage.assertPageLoaded();
+
+      const successMessage = await po.checkoutCompletePage.getCompleteHeader();
+      expect(successMessage).toContain('Thank you for your order!');
+    });
+
+    test('@smoke @checkout @critical - Should navigate back from complete page', async () => {
+      await po.inventoryPage.addProductToCart('Sauce Labs Backpack');
+      await po.cartPage.goto();
+      await po.cartPage.goToCheckout();
+
+      const testData = TestDataLoader.loadTestData().testData.checkout.validCheckout;
+      await po.checkoutInfoPage.fillCheckoutForm(
+        testData.firstName,
+        testData.lastName,
+        testData.postalCode
+      );
+      await po.checkoutInfoPage.continueToOverview();
+      await po.checkoutOverviewPage.finish();
+
+      await po.checkoutCompletePage.backToProducts();
+
+      await expect(po.page).toHaveURL(/.*inventory/);
+      await po.inventoryPage.assertInventoryPageLoaded();
+    });
+
+    test('@smoke @checkout @critical - Should complete checkout with multiple products', async () => {
+      await po.inventoryPage.addMultipleProductsToCart([
+        'Sauce Labs Backpack',
+        'Sauce Labs Bike Light',
+        'Sauce Labs Bolt T-Shirt',
+      ]);
+
+      await po.cartPage.goto();
+      await po.cartPage.goToCheckout();
+
+      const testData = TestDataLoader.loadTestData().testData.checkout.validCheckout;
+      await po.checkoutInfoPage.fillCheckoutForm(
+        testData.firstName,
+        testData.lastName,
+        testData.postalCode
+      );
+      await po.checkoutInfoPage.continueToOverview();
+
+      await po.checkoutOverviewPage.assertCartItemCount(3);
+      await po.checkoutOverviewPage.assertCartItemPresent('Sauce Labs Backpack');
+      await po.checkoutOverviewPage.assertCartItemPresent('Sauce Labs Bike Light');
+      await po.checkoutOverviewPage.assertCartItemPresent('Sauce Labs Bolt T-Shirt');
+
+      await po.checkoutOverviewPage.finish();
+      await expect(po.page).toHaveURL(/.*checkout-complete/);
+    });
+
+    test('@smoke @checkout @critical - Should verify price calculation on overview page', async () => {
+      await po.inventoryPage.addProductToCart('Sauce Labs Backpack');
+      await po.inventoryPage.addProductToCart('Sauce Labs Bike Light');
+
+      await po.cartPage.goto();
+      await po.cartPage.goToCheckout();
+
+      const testData = TestDataLoader.loadTestData().testData.checkout.validCheckout;
+      await po.checkoutInfoPage.fillCheckoutForm(
+        testData.firstName,
+        testData.lastName,
+        testData.postalCode
+      );
+      await po.checkoutInfoPage.continueToOverview();
+
+      await po.checkoutOverviewPage.assertProductPrice('Sauce Labs Backpack', '$29.99');
+      await po.checkoutOverviewPage.assertProductPrice('Sauce Labs Bike Light', '$9.99');
+      await po.checkoutOverviewPage.assertPriceBreakdownDisplayed();
+      await po.checkoutOverviewPage.assertPaymentShippingInfoDisplayed();
+    });
+
+    test('@smoke @checkout @flow - Should maintain product information through checkout', async () => {
+      await po.inventoryPage.addProductToCart('Sauce Labs Backpack');
+      await po.cartPage.goto();
+      await po.cartPage.goToCheckout();
+
+      const testData = TestDataLoader.loadTestData().testData.checkout.validCheckout;
+      await po.checkoutInfoPage.fillCheckoutForm(
+        testData.firstName,
+        testData.lastName,
+        testData.postalCode
+      );
+      await po.checkoutInfoPage.continueToOverview();
+
+      await po.checkoutOverviewPage.assertCartItemPresent('Sauce Labs Backpack');
+      await po.checkoutOverviewPage.assertProductPrice('Sauce Labs Backpack', '$29.99');
+    });
+
+    test('@smoke @checkout @complete - Should empty cart after order completion', async () => {
+      await po.inventoryPage.addProductToCart('Sauce Labs Backpack');
+      await po.cartPage.goto();
+      await po.cartPage.goToCheckout();
+
+      const testData = TestDataLoader.loadTestData().testData.checkout.validCheckout;
+      await po.checkoutInfoPage.fillCheckoutForm(
+        testData.firstName,
+        testData.lastName,
+        testData.postalCode
+      );
+      await po.checkoutInfoPage.continueToOverview();
+      await po.checkoutOverviewPage.finish();
+
+      await po.checkoutCompletePage.assertCartIsEmpty();
+      await po.checkoutCompletePage.backToProducts();
+      await expect(po.checkoutCompletePage.cartBadge).not.toBeVisible();
+    });
   });
 
-  // ==================== CHECKOUT SMOKE TESTS ====================
+  // ==================== CHECKOUT VALIDATION ====================
 
-  test('@smoke @checkout @critical - Should navigate to checkout information page', async () => {
-    // Add a product to cart
-    const addToCartButton = po.page
-      .locator('[data-test="add-to-cart-sauce-labs-backpack"]')
-      .first();
-    await addToCartButton.click();
+  test.describe('Checkout Validation', () => {
+    test('@smoke @checkout @error - Should handle empty checkout fields', async () => {
+      await po.inventoryPage.addProductToCart('Sauce Labs Backpack');
+      await po.cartPage.goto();
+      await po.cartPage.goToCheckout();
 
-    // Navigate to cart page
-    const cartIcon = po.page.locator('.shopping_cart_link');
-    await cartIcon.click();
+      await po.checkoutInfoPage.continueButton.click();
+      await po.checkoutInfoPage.assertErrorMessage('First Name is required');
+      await expect(po.page).toHaveURL(/.*checkout-step-one/);
+    });
 
-    // Click checkout button
-    const checkoutButton = po.page.locator('[data-test="checkout"]');
-    await checkoutButton.click();
+    test('@smoke @checkout @error - Should handle missing postal code', async () => {
+      await po.inventoryPage.addProductToCart('Sauce Labs Backpack');
+      await po.cartPage.goto();
+      await po.cartPage.goToCheckout();
 
-    // Verify we're on checkout info page
-    await expect(po.page).toHaveURL(/.*checkout-step-one/);
+      await po.checkoutInfoPage.fillFirstName('John');
+      await po.checkoutInfoPage.fillLastName('Doe');
+      await po.checkoutInfoPage.continueButton.click();
+      await po.checkoutInfoPage.assertErrorMessage('Postal Code is required');
+    });
 
-    // Verify checkout form is visible
-    const firstNameField = po.page.locator('[data-test="firstName"]');
-    const lastNameField = po.page.locator('[data-test="lastName"]');
-    const postalCodeField = po.page.locator('[data-test="postalCode"]');
+    test('@smoke @checkout @validation - Should show error for invalid form fields', async () => {
+      await po.inventoryPage.addProductToCart('Sauce Labs Backpack');
+      await po.cartPage.goto();
+      await po.cartPage.goToCheckout();
 
-    await expect(firstNameField).toBeVisible();
-    await expect(lastNameField).toBeVisible();
-    await expect(postalCodeField).toBeVisible();
+      await po.checkoutInfoPage.fillFirstName('John');
+      await po.checkoutInfoPage.continueButton.click();
+      await po.checkoutInfoPage.assertErrorMessage('Last Name is required');
+    });
+
+    test('@smoke @checkout @critical - Should handle special characters in checkout form', async () => {
+      await po.inventoryPage.addProductToCart('Sauce Labs Backpack');
+      await po.cartPage.goto();
+      await po.cartPage.goToCheckout();
+
+      const testData = TestDataLoader.loadTestData().testData.checkout.specialCharacters;
+      await po.checkoutInfoPage.fillCheckoutForm(
+        testData.firstName,
+        testData.lastName,
+        testData.postalCode
+      );
+
+      await po.checkoutInfoPage.continueToOverview();
+      await expect(po.page).toHaveURL(/.*checkout-step-two/);
+    });
   });
 
-  test('@smoke @checkout @critical - Should complete checkout process', async () => {
-    // Add a product to cart
-    const addToCartButton = po.page
-      .locator('[data-test="add-to-cart-sauce-labs-backpack"]')
-      .first();
-    await addToCartButton.click();
+  // ==================== NAVIGATION & STATE MANAGEMENT ====================
 
-    // Navigate to cart page
-    const cartIcon = po.page.locator('.shopping_cart_link');
-    await cartIcon.click();
+  test.describe('Navigation & State Management', () => {
+    test('@smoke @checkout @navigation - Should handle back navigation during checkout', async () => {
+      await po.inventoryPage.addProductToCart('Sauce Labs Backpack');
+      await po.cartPage.goto();
+      await po.cartPage.goToCheckout();
 
-    // Start checkout
-    const checkoutButton = po.page.locator('[data-test="checkout"]');
-    await checkoutButton.click();
+      const testData = TestDataLoader.loadTestData().testData.checkout.validCheckout;
+      await po.checkoutInfoPage.fillCheckoutForm(
+        testData.firstName,
+        testData.lastName,
+        testData.postalCode
+      );
+      await po.checkoutInfoPage.continueToOverview();
 
-    // Fill checkout information
-    await po.page.locator('[data-test="firstName"]').fill('John');
-    await po.page.locator('[data-test="lastName"]').fill('Doe');
-    await po.page.locator('[data-test="postalCode"]').fill('12345');
+      await expect(po.page).toHaveURL(/.*checkout-step-two/);
 
-    // Continue to overview
-    const continueButton = po.page.locator('[data-test="continue"]');
-    await continueButton.click();
+      await po.checkoutOverviewPage.cancel();
 
-    // Verify we're on checkout overview page
-    await expect(po.page).toHaveURL(/.*checkout-step-two/);
+      await expect(po.page).toHaveURL(/.*inventory/);
+    });
 
-    // Verify order summary is visible
-    const orderSummary = po.page.locator('.summary_info');
-    await expect(orderSummary).toBeVisible();
+    test('@smoke @checkout @navigation - Should cancel from checkout overview page', async () => {
+      await po.inventoryPage.addProductToCart('Sauce Labs Backpack');
+      await po.cartPage.goto();
+      await po.cartPage.goToCheckout();
 
-    // Complete the order
-    const finishButton = po.page.locator('[data-test="finish"]');
-    await finishButton.click();
+      const testData = TestDataLoader.loadTestData().testData.checkout.validCheckout;
+      await po.checkoutInfoPage.fillCheckoutForm(
+        testData.firstName,
+        testData.lastName,
+        testData.postalCode
+      );
+      await po.checkoutInfoPage.continueToOverview();
 
-    // Verify we're on checkout complete page
-    await expect(po.page).toHaveURL(/.*checkout-complete/);
+      await po.checkoutOverviewPage.cancel();
 
-    // Verify success message
-    const successMessage = po.page.locator('.complete-header');
-    await expect(successMessage).toHaveText('Thank you for your order!');
+      await expect(po.page).toHaveURL(/.*inventory/);
+      await po.inventoryPage.assertInventoryPageLoaded();
+      await po.inventoryPage.assertCartBadgeCount(1);
+    });
+
+    test('@smoke @checkout @error - Should handle browser back button during checkout', async () => {
+      await po.inventoryPage.addProductToCart('Sauce Labs Backpack');
+      await po.cartPage.goto();
+      await po.cartPage.goToCheckout();
+
+      const testData = TestDataLoader.loadTestData().testData.checkout.validCheckout;
+      await po.checkoutInfoPage.fillCheckoutForm(
+        testData.firstName,
+        testData.lastName,
+        testData.postalCode
+      );
+      await po.checkoutInfoPage.continueToOverview();
+
+      // Verify we're on overview page
+      await expect(po.page).toHaveURL(/.*checkout-step-two/);
+
+      // Go back using browser back button
+      await po.page.goBack();
+
+      // Verify we're back on checkout info page without errors
+      await expect(po.page).toHaveURL(/.*checkout-step-one/);
+      await po.checkoutInfoPage.assertPageLoaded();
+
+      // Can optionally continue with the checkout again
+      await po.checkoutInfoPage.fillCheckoutForm(
+        testData.firstName,
+        testData.lastName,
+        testData.postalCode
+      );
+      await po.checkoutInfoPage.continueToOverview();
+      await expect(po.page).toHaveURL(/.*checkout-step-two/);
+    });
+
+    test('@smoke @checkout @critical - Should maintain session across checkout steps', async () => {
+      await po.inventoryPage.addProductToCart('Sauce Labs Backpack');
+      await po.cartPage.goto();
+      await po.cartPage.goToCheckout();
+
+      const testData = TestDataLoader.loadTestData().testData.checkout.validCheckout;
+      await po.checkoutInfoPage.fillCheckoutForm(
+        testData.firstName,
+        testData.lastName,
+        testData.postalCode
+      );
+      await po.checkoutInfoPage.continueToOverview();
+
+      await po.page.reload();
+      await po.checkoutOverviewPage.waitForPageLoad();
+
+      await expect(po.page).toHaveURL(/.*checkout-step-two/);
+      await po.checkoutOverviewPage.assertCartItemCount(1);
+
+      await po.checkoutOverviewPage.finish();
+      await expect(po.page).toHaveURL(/.*checkout-complete/);
+    });
   });
 
-  // ==================== PERFORMANCE SMOKE TESTS ====================
+  // ==================== PERFORMANCE TESTS ====================
 
-  test('@smoke @cart @performance - Should add to cart within acceptable time', async () => {
-    const startTime = Date.now();
+  test.describe('Performance Tests', () => {
+    test('@smoke @cart @performance - Should add to cart within acceptable time', async () => {
+      const startTime = Date.now();
+      await po.inventoryPage.addProductToCart('Sauce Labs Backpack');
+      const endTime = Date.now();
+      const addToCartTime = endTime - startTime;
 
-    // Add product to cart
-    const addToCartButton = po.page
-      .locator('[data-test="add-to-cart-sauce-labs-backpack"]')
-      .first();
-    await addToCartButton.click();
+      expect(addToCartTime).toBeLessThan(2000);
+      await po.inventoryPage.assertCartBadgeCount(1);
+    });
 
-    const endTime = Date.now();
-    const addToCartTime = endTime - startTime;
+    test('@smoke @checkout @performance - Should complete checkout within acceptable time', async () => {
+      await po.inventoryPage.addProductToCart('Sauce Labs Backpack');
 
-    // Add to cart should complete within 2 seconds
-    expect(addToCartTime).toBeLessThan(2000);
+      const startTime = Date.now();
+      await po.cartPage.goto();
+      await po.cartPage.goToCheckout();
 
-    // Verify cart badge is updated
-    const cartBadge = po.page.locator('.shopping_cart_badge');
-    await expect(cartBadge).toHaveText('1');
-  });
+      const testData = TestDataLoader.loadTestData().testData.checkout.validCheckout;
+      await po.checkoutInfoPage.fillCheckoutForm(
+        testData.firstName,
+        testData.lastName,
+        testData.postalCode
+      );
+      await po.checkoutInfoPage.continueToOverview();
+      await po.checkoutOverviewPage.finish();
+      const endTime = Date.now();
 
-  test('@smoke @checkout @performance - Should complete checkout within acceptable time', async () => {
-    // Add product to cart
-    const addToCartButton = po.page
-      .locator('[data-test="add-to-cart-sauce-labs-backpack"]')
-      .first();
-    await addToCartButton.click();
+      const checkoutTime = endTime - startTime;
+      expect(checkoutTime).toBeLessThan(10000);
+      await expect(po.page).toHaveURL(/.*checkout-complete/);
+    });
 
-    const startTime = Date.now();
+    test('@smoke @checkout @performance - Should process checkout form submission quickly', async () => {
+      await po.inventoryPage.addProductToCart('Sauce Labs Backpack');
+      await po.cartPage.goto();
+      await po.cartPage.goToCheckout();
 
-    // Navigate to cart and checkout
-    const cartIcon = po.page.locator('.shopping_cart_link');
-    await cartIcon.click();
+      const startTime = Date.now();
 
-    const checkoutButton = po.page.locator('[data-test="checkout"]');
-    await checkoutButton.click();
+      const testData = TestDataLoader.loadTestData().testData.checkout.validCheckout;
+      await po.checkoutInfoPage.fillCheckoutForm(
+        testData.firstName,
+        testData.lastName,
+        testData.postalCode
+      );
+      await po.checkoutInfoPage.continueToOverview();
 
-    // Fill and complete checkout
-    await po.page.locator('[data-test="firstName"]').fill('John');
-    await po.page.locator('[data-test="lastName"]').fill('Doe');
-    await po.page.locator('[data-test="postalCode"]').fill('12345');
+      const endTime = Date.now();
+      const submissionTime = endTime - startTime;
 
-    const continueButton = po.page.locator('[data-test="continue"]');
-    await continueButton.click();
-
-    const finishButton = po.page.locator('[data-test="finish"]');
-    await finishButton.click();
-
-    const endTime = Date.now();
-    const checkoutTime = endTime - startTime;
-
-    // Complete checkout should finish within 10 seconds
-    expect(checkoutTime).toBeLessThan(10000);
-
-    // Verify we're on complete page
-    await expect(po.page).toHaveURL(/.*checkout-complete/);
-  });
-
-  // ==================== ERROR HANDLING SMOKE TESTS ====================
-
-  test('@smoke @checkout @error - Should handle empty checkout fields', async () => {
-    // Add product to cart
-    const addToCartButton = po.page
-      .locator('[data-test="add-to-cart-sauce-labs-backpack"]')
-      .first();
-    await addToCartButton.click();
-
-    // Navigate to checkout
-    const cartIcon = po.page.locator('.shopping_cart_link');
-    await cartIcon.click();
-
-    const checkoutButton = po.page.locator('[data-test="checkout"]');
-    await checkoutButton.click();
-
-    // Try to continue without filling fields
-    const continueButton = po.page.locator('[data-test="continue"]');
-    await continueButton.click();
-
-    // Verify error message
-    const errorMessage = po.page.locator('[data-test="error"]');
-    await expect(errorMessage).toBeVisible();
-    await expect(errorMessage).toContainText('First Name is required');
-
-    // Verify we're still on checkout info page
-    await expect(po.page).toHaveURL(/.*checkout-step-one/);
-  });
-
-  // ==================== NAVIGATION SMOKE TESTS ====================
-
-  test('@smoke @cart @navigation - Should maintain cart state across page navigation', async () => {
-    // Add multiple products to cart
-    await po.page.locator('[data-test="add-to-cart-sauce-labs-backpack"]').first().click();
-    await po.page.locator('[data-test="add-to-cart-sauce-labs-bike-light"]').first().click();
-
-    // Verify cart badge shows 2 items
-    const cartBadge = po.page.locator('.shopping_cart_badge');
-    await expect(cartBadge).toHaveText('2');
-
-    // Navigate to cart page
-    const cartIcon = po.page.locator('.shopping_cart_link');
-    await cartIcon.click();
-
-    // Verify both items are in cart
-    const cartItems = po.page.locator('.cart_item');
-    await expect(cartItems).toHaveCount(2);
-
-    // Go back to inventory
-    await po.page.goto('/inventory.html');
-
-    // Verify cart badge still shows 2 items
-    await expect(cartBadge).toHaveText('2');
-  });
-
-  test('@smoke @checkout @navigation - Should handle back navigation during checkout', async () => {
-    // Add product to cart
-    const addToCartButton = po.page
-      .locator('[data-test="add-to-cart-sauce-labs-backpack"]')
-      .first();
-    await addToCartButton.click();
-
-    // Navigate to checkout
-    const cartIcon = po.page.locator('.shopping_cart_link');
-    await cartIcon.click();
-
-    const checkoutButton = po.page.locator('[data-test="checkout"]');
-    await checkoutButton.click();
-
-    // Fill checkout info
-    await po.page.locator('[data-test="firstName"]').fill('John');
-    await po.page.locator('[data-test="lastName"]').fill('Doe');
-    await po.page.locator('[data-test="postalCode"]').fill('12345');
-
-    const continueButton = po.page.locator('[data-test="continue"]');
-    await continueButton.click();
-
-    // Go back to checkout info
-    const cancelButton = po.page.locator('[data-test="cancel"]');
-    await cancelButton.click();
-
-    // Verify we're back on checkout info page
-    await expect(po.page).toHaveURL(/.*checkout-step-one/);
-
-    // Verify form fields still have values
-    const firstNameField = po.page.locator('[data-test="firstName"]');
-    await expect(firstNameField).toHaveValue('John');
+      expect(submissionTime).toBeLessThan(3000);
+      await expect(po.page).toHaveURL(/.*checkout-step-two/);
+    });
   });
 });
-
