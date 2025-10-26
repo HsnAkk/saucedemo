@@ -9,8 +9,7 @@ import { TestDataLoader } from '../../utils/testDataLoader.js';
 test.describe('Login Regression Tests', () => {
   let po;
 
-  // Increase timeout for login tests
-  test.setTimeout(60000);
+  // Timeout is configured in playwright.config.js (60 seconds for login-tests)
 
   test.beforeEach(async ({ page }) => {
     po = new POManager(page);

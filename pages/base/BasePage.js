@@ -19,7 +19,15 @@ export class BasePage {
    * @param {string} path - The path to navigate to
    */
   async goto(path = '') {
-    const url = path.startsWith('http') ? path : `${this.baseURL}${path}`;
+    let url;
+    if (path.startsWith('http')) {
+      url = path;
+    } else {
+      // Ensure proper URL construction without double slashes
+      const baseUrl = this.baseURL.endsWith('/') ? this.baseURL.slice(0, -1) : this.baseURL;
+      const cleanPath = path.startsWith('/') ? path : `/${path}`;
+      url = `${baseUrl}${cleanPath}`;
+    }
     await this.page.goto(url);
     await this.waitForLoadState();
   }
@@ -158,6 +166,15 @@ export class BasePage {
   async assertElementVisible(locator) {
     const element = typeof locator === 'string' ? this.page.locator(locator) : locator;
     await expect(element).toBeVisible();
+  }
+
+  /**
+   * Assert element is Hidden
+   * @param {string|Locator} locator - Element locator (string or Locator object)
+   */
+  async assertElementHidden(locator) {
+    const element = typeof locator === 'string' ? this.page.locator(locator) : locator;
+    await expect(element).not.toBeVisible();
   }
 
   /**

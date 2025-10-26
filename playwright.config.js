@@ -18,7 +18,7 @@ dotenv.config({ path: path.resolve(__dirname, '.env') });
  * @see https://playwright.dev/docs/test-configuration
  */
 export default defineConfig({
-  // globalSetup: './global-setup.js', // Commented out - will be handled per project
+  globalSetup: './global-setup.js',
   testDir: './tests',
   /* Run tests in files in parallel */
   fullyParallel: true,
@@ -42,11 +42,18 @@ export default defineConfig({
     video: 'retain-on-failure',
   },
 
+  /* Global timeout settings */
+  timeout: 30000, // 30 seconds for individual tests
+  expect: {
+    timeout: 10000, // 10 seconds for assertions
+  },
+
   /* Configure projects for major browsers */
   projects: [
     {
       name: 'login-tests',
       testMatch: 'tests/regression/login.spec.js', // Only regression login tests
+      timeout: 60000, // 60 seconds for login tests (more complex scenarios)
       use: {
         ...devices['Desktop Chrome'],
         // No storageState - fresh context
@@ -61,20 +68,20 @@ export default defineConfig({
         'tests/regression/checkout*.spec.js',
         'tests/regression/headerMenu.spec.js',
       ],
+      timeout: 45000, // 45 seconds for authenticated tests (moderate complexity)
       use: {
         ...devices['Desktop Chrome'],
         storageState: 'auth-standard.json',
       },
-      globalSetup: './global-setup.js',
     },
     {
       name: 'smoke-tests',
       testMatch: 'tests/smoke/*.smoke.spec.js',
+      timeout: 30000, // 30 seconds for smoke tests (fast critical path)
       use: {
         ...devices['Desktop Chrome'],
         storageState: 'auth-standard.json',
       },
-      globalSetup: './global-setup.js',
     },
     // {
     //   name: 'chromium',
