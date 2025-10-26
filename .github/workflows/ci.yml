@@ -58,6 +58,9 @@ jobs:
         run: npm run test:smoke
         env:
           CI: true
+          # Optional: Use secrets if available, otherwise uses fallback credentials
+          STANDARD_USERNAME: ${{ secrets.STANDARD_USERNAME }}
+          STANDARD_PASSWORD: ${{ secrets.STANDARD_PASSWORD }}
 
       - name: Upload test results
         if: always()
@@ -105,6 +108,9 @@ jobs:
         run: npm run test:regression -- --shard=${{ matrix.shard }}/4
         env:
           CI: true
+          # Optional: Use secrets if available, otherwise uses fallback credentials
+          STANDARD_USERNAME: ${{ secrets.STANDARD_USERNAME }}
+          STANDARD_PASSWORD: ${{ secrets.STANDARD_PASSWORD }}
 
       - name: Upload test results
         if: always()
