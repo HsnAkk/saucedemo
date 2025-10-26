@@ -24,7 +24,7 @@ export class TestDataLoader {
       password,
     };
   }
-  
+
   static getDefaultUsername(userType) {
     // SauceDemo standard demo credentials
     const defaults = {
@@ -37,7 +37,7 @@ export class TestDataLoader {
     };
     return defaults[userType] || 'standard_user';
   }
-  
+
   static getDefaultPassword() {
     // All SauceDemo users use the same password
     return 'secret_sauce';

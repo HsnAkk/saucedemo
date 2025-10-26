@@ -13,15 +13,17 @@
 Click **"New repository secret"** and add:
 
 #### For SauceDemo (Optional - already has fallback):
+
 ```
 Name: STANDARD_USERNAME
 Value: standard_user
 
-Name: STANDARD_PASSWORD  
+Name: STANDARD_PASSWORD
 Value: secret_sauce
 ```
 
 #### For Real Projects:
+
 ```
 Name: PROD_DB_PASSWORD
 Value: your-actual-password
@@ -54,12 +56,14 @@ const username = process.env[user.username] || this.getDefaultUsername(userType)
 ## Security Best Practices
 
 ### ✅ DO:
+
 - Use secrets for **production credentials**
 - Use secrets for **private/sensitive data**
 - Rotate secrets regularly
 - Use different secrets for different environments
 
 ### ❌ DON'T:
+
 - Commit secrets to repository
 - Hardcode production credentials
 - Share secrets publicly
@@ -70,6 +74,7 @@ const username = process.env[user.username] || this.getDefaultUsername(userType)
 **Current Setup:** ✅ Uses fallback credentials (perfect for SauceDemo)
 
 **When to Add Secrets:**
+
 - You're testing against a **real app** (not SauceDemo)
 - You have **private credentials**
 - You need **multiple environments** (dev/staging/prod)
@@ -77,20 +82,22 @@ const username = process.env[user.username] || this.getDefaultUsername(userType)
 
 ## Comparison
 
-| Approach | Setup | Security | Flexibility | Use Case |
-|----------|-------|----------|-------------|----------|
-| **Fallback (Current)** | ✅ None | ⚠️ Public creds | ⚠️ One set | Demo apps |
-| **GitHub Secrets** | ⚙️ 5 min | ✅ Secure | ✅ Multiple | Real apps |
+| Approach               | Setup    | Security        | Flexibility | Use Case  |
+| ---------------------- | -------- | --------------- | ----------- | --------- |
+| **Fallback (Current)** | ✅ None  | ⚠️ Public creds | ⚠️ One set  | Demo apps |
+| **GitHub Secrets**     | ⚙️ 5 min | ✅ Secure       | ✅ Multiple | Real apps |
 
 ## When to Use Each
 
 ### Use Fallback Credentials When:
+
 - ✅ Testing public demo apps (SauceDemo)
 - ✅ Learning/portfolio projects
 - ✅ Quick prototyping
 - ✅ Credentials are public knowledge
 
 ### Use GitHub Secrets When:
+
 - ✅ Testing production apps
 - ✅ Credentials are sensitive
 - ✅ Multiple environments (dev/staging/prod)
@@ -122,9 +129,9 @@ If you want to use GitHub Secrets for SauceDemo:
 ## Note
 
 The current implementation is **flexible** - it will use:
+
 1. **GitHub Secrets** if available (most secure)
 2. **Environment variables** if set locally
 3. **Fallback credentials** as last resort (convenient for demos)
 
 So you get **best of both worlds**!
-
