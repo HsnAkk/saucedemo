@@ -15,14 +15,32 @@ export class TestDataLoader {
       throw new Error(`User type '${userType}' not found`);
     }
 
-    // Get password from environment variables
-    const username = process.env[user.username];
-    const password = process.env[user.password];
+    // Get password from environment variables, with fallback for SauceDemo demo credentials
+    const username = process.env[user.username] || this.getDefaultUsername(userType);
+    const password = process.env[user.password] || this.getDefaultPassword(userType);
 
     return {
       username,
       password,
     };
+  }
+  
+  static getDefaultUsername(userType) {
+    // SauceDemo standard demo credentials
+    const defaults = {
+      standard: 'standard_user',
+      problem: 'problem_user',
+      performance: 'performance_glitch_user',
+      error: 'error_user',
+      visual: 'visual_user',
+      locked: 'locked_out_user',
+    };
+    return defaults[userType] || 'standard_user';
+  }
+  
+  static getDefaultPassword() {
+    // All SauceDemo users use the same password
+    return 'secret_sauce';
   }
 
   static loadTestData() {
