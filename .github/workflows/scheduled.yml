@@ -3,7 +3,7 @@ name: Scheduled Tests
 on:
   schedule:
     # Run every day at 2 AM UTC (nightly regression)
-    - cron: '25 20 * * *'
+    - cron: '30 18 * * *'
   workflow_dispatch: # Allow manual trigger
 
 jobs:
