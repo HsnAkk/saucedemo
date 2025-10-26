@@ -34,6 +34,8 @@ export class TestDataLoader {
       error: 'error_user',
       visual: 'visual_user',
       locked: 'locked_out_user',
+      invalid: 'invalid_user', // Non-existent user for negative tests
+      empty: '', // Empty username for empty field tests
     };
     return defaults[userType] || 'standard_user';
   }
