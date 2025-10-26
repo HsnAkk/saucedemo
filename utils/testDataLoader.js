@@ -45,7 +45,7 @@ export class TestDataLoader {
     const file = JSON.parse(fs.readFileSync(filePath, 'utf8'));
     return file.apiEndpoints;
   }
-  
+
   static getApiEndpoints() {
     return this.loadApiEndpoints();
   }

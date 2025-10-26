@@ -1,7 +1,6 @@
 import { chromium } from '@playwright/test';
 import { TestDataLoader } from './utils/testDataLoader.js';
 
-
 export default async function globalSetup(config) {
   const browser = await chromium.launch();
   const context = await browser.newContext();
