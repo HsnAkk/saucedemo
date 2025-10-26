@@ -42,7 +42,12 @@ export class TestDataLoader {
 
   static loadApiEndpoints() {
     const filePath = path.join(process.cwd(), 'fixtures/data', 'apiEndpoints.json');
-    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    const file = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    return file.apiEndpoints;
+  }
+  
+  static getApiEndpoints() {
+    return this.loadApiEndpoints();
   }
 
   static loadEnvironments() {

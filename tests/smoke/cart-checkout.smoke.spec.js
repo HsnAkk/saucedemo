@@ -24,7 +24,7 @@ test.describe('Cart & Checkout Smoke Tests', () => {
   // ==================== CART OPERATIONS ====================
 
   test.describe('Cart Operations', () => {
-    test('@smoke @cart @critical - Should add product to cart successfully', async () => {
+  test('@smoke @cart @critical - Should add product to cart successfully', async () => {
       await po.inventoryPage.addProductToCart('Sauce Labs Backpack');
       await po.inventoryPage.assertProductAddedToCart('Sauce Labs Backpack');
       await po.inventoryPage.assertCartBadgeCount(1);
@@ -57,15 +57,15 @@ test.describe('Cart & Checkout Smoke Tests', () => {
       await po.cartPage.assertProductInCart('Sauce Labs Backpack');
       await po.cartPage.assertProductPrice('Sauce Labs Backpack', '$29.99');
       await po.cartPage.assertProductQuantity('Sauce Labs Backpack', '1');
-    });
+  });
 
-    test('@smoke @cart @critical - Should navigate to cart page', async () => {
+  test('@smoke @cart @critical - Should navigate to cart page', async () => {
       await po.inventoryPage.addProductToCart('Sauce Labs Backpack');
       await po.inventoryPage.goToCart();
 
-      await expect(po.page).toHaveURL(/.*cart/);
-      const pageTitle = await po.page.title();
-      expect(pageTitle).toBe(TestDataLoader.getPageTitle('cart'));
+    await expect(po.page).toHaveURL(/.*cart/);
+    const pageTitle = await po.page.title();
+    expect(pageTitle).toBe(TestDataLoader.getPageTitle('cart'));
       await po.cartPage.assertCartPageLoaded();
       await po.cartPage.assertCartItemCount(1);
     });
@@ -188,13 +188,13 @@ test.describe('Cart & Checkout Smoke Tests', () => {
   // ==================== CHECKOUT FLOW ====================
 
   test.describe('Checkout Flow', () => {
-    test('@smoke @checkout @critical - Should navigate to checkout information page', async () => {
+  test('@smoke @checkout @critical - Should navigate to checkout information page', async () => {
       await po.inventoryPage.addProductToCart('Sauce Labs Backpack');
       await po.cartPage.goto();
       await po.cartPage.waitForPageLoad();
       await po.cartPage.goToCheckout();
 
-      await expect(po.page).toHaveURL(/.*checkout-step-one/);
+    await expect(po.page).toHaveURL(/.*checkout-step-one/);
       await po.checkoutInfoPage.assertPageLoaded();
     });
 
@@ -213,9 +213,9 @@ test.describe('Cart & Checkout Smoke Tests', () => {
       await po.checkoutInfoPage.continueToOverview();
       await expect(po.page).toHaveURL(/.*checkout-step-two/);
       await po.checkoutOverviewPage.assertPageLoaded();
-    });
+  });
 
-    test('@smoke @checkout @critical - Should complete checkout process', async () => {
+  test('@smoke @checkout @critical - Should complete checkout process', async () => {
       await po.inventoryPage.addProductToCart('Sauce Labs Backpack');
       await po.cartPage.goto();
       await po.cartPage.goToCheckout();
@@ -451,7 +451,7 @@ test.describe('Cart & Checkout Smoke Tests', () => {
       await po.checkoutInfoPage.continueToOverview();
 
       // Verify we're on overview page
-      await expect(po.page).toHaveURL(/.*checkout-step-two/);
+    await expect(po.page).toHaveURL(/.*checkout-step-two/);
 
       // Go back using browser back button
       await po.page.goBack();
@@ -490,27 +490,27 @@ test.describe('Cart & Checkout Smoke Tests', () => {
       await po.checkoutOverviewPage.assertCartItemCount(1);
 
       await po.checkoutOverviewPage.finish();
-      await expect(po.page).toHaveURL(/.*checkout-complete/);
+    await expect(po.page).toHaveURL(/.*checkout-complete/);
     });
   });
 
   // ==================== PERFORMANCE TESTS ====================
 
   test.describe('Performance Tests', () => {
-    test('@smoke @cart @performance - Should add to cart within acceptable time', async () => {
-      const startTime = Date.now();
+  test('@smoke @cart @performance - Should add to cart within acceptable time', async () => {
+    const startTime = Date.now();
       await po.inventoryPage.addProductToCart('Sauce Labs Backpack');
-      const endTime = Date.now();
-      const addToCartTime = endTime - startTime;
+    const endTime = Date.now();
+    const addToCartTime = endTime - startTime;
 
-      expect(addToCartTime).toBeLessThan(2000);
+    expect(addToCartTime).toBeLessThan(2000);
       await po.inventoryPage.assertCartBadgeCount(1);
-    });
+  });
 
-    test('@smoke @checkout @performance - Should complete checkout within acceptable time', async () => {
+  test('@smoke @checkout @performance - Should complete checkout within acceptable time', async () => {
       await po.inventoryPage.addProductToCart('Sauce Labs Backpack');
 
-      const startTime = Date.now();
+    const startTime = Date.now();
       await po.cartPage.goto();
       await po.cartPage.goToCheckout();
 
@@ -522,12 +522,12 @@ test.describe('Cart & Checkout Smoke Tests', () => {
       );
       await po.checkoutInfoPage.continueToOverview();
       await po.checkoutOverviewPage.finish();
-      const endTime = Date.now();
+    const endTime = Date.now();
 
-      const checkoutTime = endTime - startTime;
-      expect(checkoutTime).toBeLessThan(10000);
-      await expect(po.page).toHaveURL(/.*checkout-complete/);
-    });
+    const checkoutTime = endTime - startTime;
+    expect(checkoutTime).toBeLessThan(10000);
+    await expect(po.page).toHaveURL(/.*checkout-complete/);
+  });
 
     test('@smoke @checkout @performance - Should process checkout form submission quickly', async () => {
       await po.inventoryPage.addProductToCart('Sauce Labs Backpack');

@@ -6,7 +6,6 @@ import { CheckoutInfoPage } from './checkout/CheckoutInfoPage';
 import { CheckoutOverviewPage } from './checkout/CheckoutOverviewPage';
 import { CheckoutCompletePage } from './checkout/CheckoutCompletePage';
 import { HeaderComponents } from './common/HeaderComponents';
-import { CommonElements } from './common/CommonElements';
 import { BasePage } from './base/BasePage';
 
 export class POManager {
@@ -20,7 +19,6 @@ export class POManager {
     this._checkoutOverview = new CheckoutOverviewPage(page);
     this._checkoutComplete = new CheckoutCompletePage(page);
     this._headerComponents = new HeaderComponents(page);
-    this._commonElements = new CommonElements(page);
     this._basePage = new BasePage(page);
   }
 
@@ -59,10 +57,6 @@ export class POManager {
 
   get headerComponents() {
     return this._headerComponents;
-  }
-
-  get commonElements() {
-    return this._commonElements;
   }
 
   get basePage() {

@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "playwright test",
+    "test:all": "npm run test:smoke && npm run test:regression",
     "test:smoke": "playwright test --grep @smoke",
     "test:regression": "playwright test",
     "test:login": "playwright test --grep @login",
@@ -14,7 +15,6 @@
     "test:checkout": "playwright test --grep @checkout",
     "test:overview": "playwright test --grep @overview",
     "test:complete": "playwright test --grep @complete",
-    "test:api": "playwright test --grep @api",
     "test:debug": "playwright test --debug",
     "test:report": "playwright show-report",
     "lint": "eslint . --ext .js,.ts",
